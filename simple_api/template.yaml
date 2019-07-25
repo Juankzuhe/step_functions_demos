@@ -3,3 +3,102 @@ Transform: AWS::Serverless-2016-10-31
 Description: Simple SignUp
 
 
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  LambdaBasicExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+            Condition: {}
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  ListUsers:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./list
+      Handler: index.main
+      Runtime: python3.7
+
+  CreateUser:
+    Type: AWS::Serverless::Function
+      Properties:
+        CodeUri: ./record_db
+        Handler: index.main
+        Runtime: python3.7
+
+  SendSms:
+    Type: AWS::Serverless::Function
+      Properties:
+        CodeUri: ./send_sms
+        Handler: index.main
+        Runtime: python3.7
+
+  StepFunction:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: NumbersToText
+      DefinitionString: |-
+        {
+          "StartAt": "CreateUser",
+          "States": {
+            "CreateUser": {
+              "Type": "Task",
+              "Resource": "${CreateUser.Arn}",
+              "Next": "StatusCode"
+            },
+            "StatusCode": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Variable": "$.status",
+                  "NumericEquals": 200,
+                  "Next": "WaitTenSeconds"
+                },
+                {
+                  "Variable": "$.status",
+                  "NumericEquals": 400,
+                  "Next": "FailRequest"
+                }
+              ],
+              "Default": "FailRequest"
+            },
+            "WaitTenSeconds": {
+              "Type": "Wait",
+              "Seconds": 10,
+              "Next": "SendSms"
+            },
+            "SendSms": {
+              "Type": "Task",
+              "Resource": "${SendSms.Arn}",
+              "Next": "ListUser"
+            },
+            "ListUser": {
+              "Type": "Task",
+              "Resource": "${ListUsers.Arn}",
+              "End": true
+            },
+            "FailRequest": {
+              "Type": "Fail",
+              "Cause": "Invalid Response"
+            }
+          }
+        }
+      Tags:
+        - Key: "id"
+          Value: 1
+        - Key: "email"
+          Value: "john@example.com"
+        - Key: "first_name"
+          Value: "John"
+        - Key: "last_name"
+          Value: "Smith"
