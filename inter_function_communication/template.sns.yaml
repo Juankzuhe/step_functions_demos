@@ -7,20 +7,6 @@ Globals:
     Timeout: 3
 
 Resources:
-#  LambdaBasicExecutionRole:
-#    Type: AWS::IAM::Role
-#    Properties:
-#      AssumeRolePolicyDocument:
-#        Statement:
-#          - Effect: Allow
-#            Principal:
-#              Service: lambda.amazonaws.com
-#            Action: sts:AssumeRole
-#            Condition: {}
-#      Path: /
-#      ManagedPolicyArns:
-#        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-
   SendMessage:
     Type: AWS::Serverless::Function
     Properties:
