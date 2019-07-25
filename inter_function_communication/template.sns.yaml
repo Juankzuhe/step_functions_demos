@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Numbers to text
+
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+#  LambdaBasicExecutionRole:
+#    Type: AWS::IAM::Role
+#    Properties:
+#      AssumeRolePolicyDocument:
+#        Statement:
+#          - Effect: Allow
+#            Principal:
+#              Service: lambda.amazonaws.com
+#            Action: sts:AssumeRole
+#            Condition: {}
+#      Path: /
+#      ManagedPolicyArns:
+#        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  SendMessage:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./lambda_a/index
+      Handler: index.main
+      Runtime: python3.7
+      Role: !GetAtt
+        - LambdaExecutionRole
+        - Arn
+        Timeout: '30'
+        DependsOn:
+          - LambdaExecutionRole
+
+  ReceiveMessage:
+    Type: AWS::Serverless::Function
+      Properties:
+        CodeUri: ./lambda_b/index
+        Handler: index.main
+        Runtime: python3.7
+        Role: !GetAtt
+          - LambdaExecutionRole
+          - Arn
+          Timeout: '30'
+          DependsOn:
+            - LambdaExecutionRole
+
+  TopicInvokeLambda:
+    Type: 'AWS::SNS::Topic'
+
+  Subscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt
+        - ReceiveMessage
+        - Arn
+      Protocol: lambda
+      TopicArn: !Ref TopicInvokeLambda
+    DependsOn:
+      - ReceiveMessage
+
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      FunctionName: !GetAtt
+        - SendMessage
+        - ReceiveMessage
+        - Arn
+      SourceArn: !Ref Topic
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Policies:
+        - PolicyName: LambdaPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - 'sns:Subscribe'
+                  - 'sns:Receive'
+                Resource: !Ref Topic
+                Effect: Allow
+
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
