@@ -1,0 +1,5 @@
+boto3
+zappa
+inflect
+docutils<0.15,>=0.10
+jmespath==0.9.3

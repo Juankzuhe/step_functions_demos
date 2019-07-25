@@ -1,0 +1,14 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Root App container
+
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  NumbersToText:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ./numbers_to_text/template.yaml
+

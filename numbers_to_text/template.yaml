@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Numbers to text
+
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  LambdaBasicExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+            Condition: {}
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  FinalCondition:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./final_condition
+      Handler: index.lambda_handler
+      Runtime: python3.7
+
+  GreaterThan:
+    Type: AWS::Serverless::Function
+      Properties:
+        CodeUri: ./greater_than
+        Handler: index.lambda_handler
+        Runtime: python3.7
+
+  LessThan:
+    Type: AWS::Serverless::Function
+      Properties:
+        CodeUri: ./less_than
+        Handler: index.lambda_handler
+        Runtime: python3.7
+
+  SubNumbers:
+    Type: AWS::Serverless::Function
+      Properties:
+        CodeUri: ./sub_numbers
+        Handler: index.lambda_handler
+        Runtime: python3.7
+
+  StepFunction:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: NumbersToText
+      DefinitionString: |-
+        {
+          "Comment": "Example of ChoiceState using AWS StepFunctions",
+          "StartAt": "SubNumbers",
+          "States": {
+            "SubNumbers": {
+              "Type": "Task",
+              "Resource": "${SubNumbers.Arn}",
+              "Next": "ChoiceState"
+            },
+            "ChoiceState": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Variable": "$.number",
+                  "NumericGreaterThan": 100,
+                  "Next": "GreaterThan"
+                },
+                {
+                  "Variable": "$.number",
+                  "NumericLessThan": 100,
+                  "Next": "LessThan"
+                }
+              ],
+              "Default": "EqualTo"
+            },
+            "GreaterThan": {
+              "Type": "Task",
+              "Resource":  "${GreaterThan.Arn}",
+              "Next": "FinalState"
+            },
+            "LessThan": {
+              "Type": "Task",
+              "Resource":  "${LessThan.Arn}",
+              "Next": "FinalState"
+            },
+            "EqualTo": {
+              "Type": "Fail",
+              "Cause": "No Matches!"
+            },
+            "FinalState": {
+              "Type": "Task",
+              "Resource": "${FinalCondition.Arn}",
+              "End": true
+            }
+          }
+        }
+      Tags:
+        - Key: "key1"
+          Value: 100
+        - Key: "key2"
+          Value: 300

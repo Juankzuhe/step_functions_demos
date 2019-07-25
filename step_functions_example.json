@@ -1,0 +1,12 @@
+{
+  "Comment": "State pass example",
+  "StartAt": "Numbers",
+  "States": {
+    "Numbers": {
+      "Type": "Pass",
+      "InputPath": "$.number",
+      "ResultPath": "$.number",
+      "End": true
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "dev": {
+    "aws_region": "us-east-1",
+    "exclude": [
+      "__pycache__",
+      ".git/*",
+      ".gitignore",
+      ".python-version",
+      "zappa_settings.json"
+    ],
+    "keep_warm": false,
+    "apigateway_enabled": false,
+    "memory_size": 128,
+    "profile_name": "default",
+    "project_name": "list-data",
+    "runtime": "python3.6",
+    "s3_bucket": "list-data-users",
+    "timeout_seconds": 30,
+    "debug": false,
+    "lambda_handler": "index.main"
+  }
+}
